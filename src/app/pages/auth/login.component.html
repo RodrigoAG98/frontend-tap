@@ -32,11 +32,11 @@
                     <label for="email1"
                         class="block text-surface-900 dark:text-surface-0 text-xl font-medium mb-2">User</label>
                     <input pInputText id="email1" type="text" placeholder="ejemplo@tap.com" class="w-full md:w-120 mb-8"
-                        [(ngModel)]="user" [invalid]="!user" />
+                        [(ngModel)]="user" [class.ng-invalid]="!user" [class.ng-dirty]="!user"/>
 
                     <label for="password1"
                         class="block text-surface-900 dark:text-surface-0 font-medium text-xl mb-2">Password</label>
-                    <p-password id="password1" [(ngModel)]="password" [invalid]="!password" placeholder="Password"
+                    <p-password id="password1" [(ngModel)]="password" [class.ng-invalid]="!password" [class.ng-dirty]="!password" placeholder="Password"
                         [toggleMask]="true" styleClass="mb-4" [fluid]="true" [feedback]="false"></p-password>
 
                     <div class="flex items-center justify-between mt-2 mb-8 gap-8">
@@ -47,7 +47,7 @@
                         <span class="font-medium no-underline ml-2 text-right cursor-pointer text-primary">Forgot
                             password?</span>
                     </div>
-                    <p-button label="Sign In" styleClass="w-full" (click)="onLogin()"></p-button>
+                    <p-button label="Sign In" styleClass="w-full" (click)="onLogin()" [disabled]="!user || !password"></p-button>
                 </div>
             </div>
         </div>

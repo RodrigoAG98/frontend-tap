@@ -210,7 +210,7 @@ interface ExportColumn {
     `,
     providers: [MessageService, ProductService, ConfirmationService]
 })
-export class Crud implements OnInit {
+export class Profiles implements OnInit {
     productDialog: boolean = false;
 
     products = signal<Product[]>([]);

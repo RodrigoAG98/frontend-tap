@@ -15,6 +15,7 @@ import { AuthService } from '../../core/services/auth.service';
     imports: [ButtonModule, CheckboxModule, InputTextModule, PasswordModule, FormsModule, RippleModule, AppFloatingConfigurator],
     templateUrl: './login.component.html'
 })
+
 export class Login {
     user: string = '';
 
@@ -28,8 +29,8 @@ export class Login {
     onLogin() {
         this.authService.login({ user: this.user, password: this.password }).subscribe({
         next: (res: any) => {
-            this.authService.setToken(res.token);
-            this.router.navigate(['/app/dashboard']);
+            this.authService.setToken(res.access_token);
+            this.router.navigate(['/']);
         },
         error: () => alert('Credenciales incorrectas')
         });
