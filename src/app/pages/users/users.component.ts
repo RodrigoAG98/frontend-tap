@@ -4,14 +4,10 @@ import { Table, TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { RippleModule } from 'primeng/ripple';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
-import { RatingModule } from 'primeng/rating';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { SelectModule } from 'primeng/select';
-import { RadioButtonModule } from 'primeng/radiobutton';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
@@ -20,6 +16,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { UserService } from './Services/user.service';
 import { User } from '../../models/user.model';
+import { HttpErrorResponse } from '@angular/common/http';
 
 interface Column {
     field: string;
@@ -40,14 +37,10 @@ interface ExportColumn {
         TableModule,
         FormsModule,
         ButtonModule,
-        RippleModule,
         ToastModule,
         ToolbarModule,
-        RatingModule,
         InputTextModule,
-        TextareaModule,
-        SelectModule,
-        RadioButtonModule,
+        MultiSelectModule,
         InputNumberModule,
         DialogModule,
         TagModule,
@@ -60,9 +53,14 @@ interface ExportColumn {
 })
 export class Users implements OnInit {
     productDialog: boolean = false;
+    loadingUsers: boolean = false;
+    loadingPdf: boolean = false;
+    loadingXlsx: boolean = false;
+    processing: boolean = false;
+    search: string = '';
 
     users = signal<User[]>([]);
-
+    //Equivalente a Objeto o Form en Vue
     user = signal<User>({
         user: '',
         name: '',
@@ -70,12 +68,14 @@ export class Users implements OnInit {
         profiles: []
     });
 
-    submitted: boolean = false;
+    errors = signal<Record<string, string>>({});
 
-    @ViewChild('dt') dt!: Table;
-
-    exportColumns!: ExportColumn[];
-
+    profiles = [
+        //{ name: 'English', id: 'en' },
+        //{ label: 'Deutsch', value: 'de' },
+        //{ label: 'Español', value: 'es' },
+    ];
+    //Columnas para PrimeNg
     cols: Column[] = [
             { field: 'code', header: 'Code', customExportHeader: 'Product Code' },
             { field: 'name', header: 'Name' },
@@ -90,27 +90,28 @@ export class Users implements OnInit {
         private confirmationService: ConfirmationService
     ) {}
 
-    exportCSV() {
-        this.dt.exportCSV();
-    }
-
     ngOnInit() {
         this.loadUsers();
     }
-
-    loadUsers() {
-        this.userService.getUsers().subscribe({
-            next: (data) => this.users.set(data),
+    //Carga de usuarios
+    loadUsers(search?: string) {
+        this.loadingUsers = true;
+        //Realizamos petición
+        this.userService.getUsers(search).subscribe({
+            next: (data) => {
+                //Asignamos valores
+                this.users.set(data),
+                this.processing = false;
+                this.loadingUsers = false;
+            },
             error: (err) => console.error('Error cargando usuarios:', err)
         });
-        console.log(this.users());
-        this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
     }
-
-    onGlobalFilter(table: Table, event: Event) {
-        table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
+    //Filtro local en front
+    onGlobalFilter() {
+        this.loadUsers(this.search);
     }
-
+    //Resetear objecto signal de user y abrimos dialogo
     openNew() {
         this.user.set({
             user: '',
@@ -118,46 +119,45 @@ export class Users implements OnInit {
             telephone: '',
             profiles: []
         });
-        this.submitted = false;
         this.productDialog = true;
     }
-
+    //Establecemos valores para User y abrimos dialogo
     editUser(user: User) {
         this.user.set({ ...user });
         this.productDialog = true;
     }
-
+    //Cerramos dialogo y limpiamos errores
     hideDialog() {
         this.productDialog = false;
-        this.submitted = false;
+        this.errors.set({});
     }
-
+    //Eliminación de usuario
     deleteUser(user: User) {
-        const userId = this.user().id;
+        const userId = user.id;
         if (!userId) return;
         this.confirmationService.confirm({
-            message: 'Are you sure you want to delete ' + user.name + '?',
+            message: 'Estás seguro que quieres eliminar a ' + user.name + '?',
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Sí',
+            rejectLabel: 'No',
             accept: () => {
                 this.userService.deleteUser(userId).subscribe({
-                    next: () => {
-                        this.users.update((current) => current.filter((t) => t.id !== user.id));
-                    }
-                });
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Deleted',
-                    life: 3000
+                    next: (res:string) => {
+                        this.loadUsers();
+                        this.showToast('success',res);
+                    },
+                    error: (err) => console.error('Error eliminando el usuario:', err)
                 });
             }
         });
     }
-
+    //Guardar o actualizar según sea el caso
     saveUser() {
-        this.submitted = true;
+        this.errors.set({});
+        this.processing = true;
         const userId = this.user().id;
+        //Sino existe un id creamos nuevo usuario
         if (!userId){
             const newUser: User = {
                 user: this.user().user,
@@ -166,17 +166,18 @@ export class Users implements OnInit {
                 profiles: this.user().profiles,
             };
             this.userService.createUser(newUser).subscribe({
-                next: (createdUser) => {
-                    this.users.update((current) => [createdUser, ...current]);
-                    this.user.set({
-                        user: '',
-                        name: '',
-                        telephone: '',
-                        profiles: []
-                    });
+                next: (res:string) => {
+                    this.processing = false;
+                    this.loadUsers();
+                    this.hideDialog();
+                    this.showToast('success',res);
+                },
+                error: (err) => {
+                    this.setErrors(err);
                 }
             });
         }else{
+            //De otro modo actualizamos el existente
             const updatedUser: User = {
                 id: this.user().id,
                 user: this.user().user,
@@ -185,18 +186,81 @@ export class Users implements OnInit {
                 profiles: this.user().profiles,
             };
             this.userService.updateUser(userId, updatedUser).subscribe({
-                next: (updatedUser) => {
-                    this.users.update((current) =>
-                        current.map((t) => (t.id === updatedUser.id ? updatedUser : t))
-                    );
-                    this.user.set({
-                        user: '',
-                        name: '',
-                        telephone: '',
-                        profiles: []
-                    });
+                next: (res:string) => {
+                    this.processing = false;
+                    this.loadUsers();
+                    this.hideDialog();
+                    this.showToast('success',res);
+                },
+                error: (err) => {
+                    this.setErrors(err);
                 }
             });
         }
+    }
+
+    // Función genérica para descargar archivos Blob
+    private downloadFile(blob: Blob, fileName: string): void {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+    //Exportar a pdf
+    exportPdf() {
+        this.loadingPdf = true;
+        this.userService.exportPdf().subscribe({
+            next: (blob: Blob) => {
+                this.downloadFile(blob, `reporte_${new Date().getTime()}.pdf`);
+                this.loadingPdf=false;
+            },
+            error: (err: HttpErrorResponse) => {
+                console.error('Error al exportar Excel:', err);
+                this.loadingPdf = false;
+            }
+        });
+    }
+    //Exportar a Xlsx
+    exportXlsx() {
+        this.loadingXlsx = true;
+            this.userService.exportExcel().subscribe({
+            next: (blob: Blob) => {
+                this.downloadFile(blob, `usuarios_${new Date().getTime()}.xlsx`);
+                this.loadingXlsx=false;
+            },
+            error: (err: HttpErrorResponse) => {
+                console.error('Error al exportar Excel:', err);
+                this.loadingXlsx = false;
+            }
+        });
+    }
+    //Manejo de errores
+    setErrors(err: HttpErrorResponse) {
+        // Capturamos el error 422 de Laravel
+        if (err.status === 422 && err.error?.errors) {
+            const rawErrors = err.error.errors;
+            const formattedErrors: Record<string, string> = {};
+
+            // Extraemos solo el primer mensaje de error de cada campo
+            Object.keys(rawErrors).forEach((key) => {
+                formattedErrors[key] = rawErrors[key][0];
+            });
+
+            // Actualizamos la Signal con los errores procesados
+            this.errors.set(formattedErrors);
+            this.showToast('warn','Por favor revisa el formulario.');
+        }
+    }
+    //Agregar un nuevo mensaje a la pantala(toast)
+    showToast(type: string, msg: string){
+        this.messageService.add({
+            severity: type,
+            summary: msg,
+            life: 3000
+        });
     }
 }

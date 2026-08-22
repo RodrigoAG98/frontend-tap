@@ -1,24 +1,27 @@
 <p-toolbar styleClass="mb-6">
     <ng-template #start>
-        <p-button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
+        <p-button label="Agregar" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
     </ng-template>
 
     <ng-template #end>
-        <p-button label="Export" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV()" />
+        <p-button class="mx-1" label="Exportar PDF" icon="pi pi-file-pdf" severity="secondary" (onClick)="exportPdf()" [loading]="loadingPdf"/>
+        <p-button class="mx-1" label="Exportar XLSX" icon="pi pi-file-excel" severity="secondary" (onClick)="exportXlsx()" [loading]="loadingXlsx"/>
     </ng-template>
 </p-toolbar>
 
 <p-table #dt [value]="users()" [rows]="10" [columns]="cols" [paginator]="true"
     [globalFilterFields]="['name', 'user']"
     [tableStyle]="{ 'min-width': '75rem' }" [rowHover]="true" dataKey="id"
-    currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products" [showCurrentPageReport]="true"
-    [rowsPerPageOptions]="[10, 20, 30]">
+    currentPageReportTemplate="Mostrando {first} al {last} de {totalRecords} usuarios" [showCurrentPageReport]="true"
+    [rowsPerPageOptions]="[10, 20, 30]"
+    [loading]="loadingUsers"
+    >
     <ng-template #caption>
         <div class="flex items-center justify-between">
             <h5 class="m-0">Administrar Usuarios</h5>
             <p-iconfield>
                 <p-inputicon styleClass="pi pi-search" />
-                <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search..." />
+                <input pInputText type="text" [(ngModel)]="search" (keyup.enter)="onGlobalFilter()" placeholder="Search..." />
             </p-iconfield>
         </div>
     </ng-template>
@@ -40,63 +43,95 @@
             <th style="min-width: 12rem"></th>
         </tr>
     </ng-template>
-    <ng-template #body let-product>
+    <ng-template #body let-user>
         <tr>
-            <td style="min-width: 12rem">{{ user().user_code }}</td>
-            <td style="min-width: 16rem">{{ user().user }}</td>
-            <td style="min-width: 16rem">{{ user().name }}</td>
-            <td style="min-width: 16rem">{{ user().created_at }}</td>
+            <td style="min-width: 12rem">{{ user.user_code }}</td>
+            <td style="min-width: 16rem">{{ user.user }}</td>
+            <td style="min-width: 16rem">{{ user.name }}</td>
+            <td style="min-width: 16rem">{{ user.created_at }}</td>
             <td>
                 <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
-                    (click)="editUser(user())" />
+                    (click)="editUser(user)" />
                 <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
-                    (click)="deleteUser(user())" />
+                    (click)="deleteUser(user)" />
             </td>
         </tr>
     </ng-template>
 </p-table>
 
-<p-dialog [(visible)]="productDialog" [style]="{ width: '450px' }" header="Product Details" [modal]="true">
+<p-dialog [(visible)]="productDialog" [style]="{ width: '450px' }" header="Detalles del usuario" [modal]="true">
     <ng-template #content>
         <div class="flex flex-col gap-6">
             <!--<img [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + product.image" [alt]="product.image"
                 class="block m-auto pb-4" *ngIf="product.image" />-->
             <div>
-                <label for="name" class="block font-bold mb-3">Name</label>
-                <input type="text" pInputText id="name" [(ngModel)]="user.name" required autofocus fluid />
-                <small class="text-red-500" *ngIf="submitted && !user.name">Name is required.</small>
+                <label for="user" class="block font-bold mb-3">Usuario</label>
+                <input 
+                    type="email" 
+                    pInputText 
+                    id="user" 
+                    [(ngModel)]="user().user" 
+                    placeholder="ejemplo@tap.com" 
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['user'] }" 
+                    required 
+                    autofocus 
+                    fluid 
+                />
+                <small class="text-red-500" *ngIf="!user().user || errors()['user']">{{ errors()['user'] ? errors()['user'] : 'El usuario es obligatorio.'}}</small>
             </div>
-
-            <!--<div>
-                <span class="block font-bold mb-4">Category</span>
-                <div class="grid grid-cols-12 gap-4">
-                    <div class="flex items-center gap-2 col-span-6">
-                        <p-radiobutton id="category1" name="category" value="Accessories"
-                            [(ngModel)]="product.category" />
-                        <label for="category1">Accessories</label>
-                    </div>
-                    <div class="flex items-center gap-2 col-span-6">
-                        <p-radiobutton id="category2" name="category" value="Clothing" [(ngModel)]="product.category" />
-                        <label for="category2">Clothing</label>
-                    </div>
-                    <div class="flex items-center gap-2 col-span-6">
-                        <p-radiobutton id="category3" name="category" value="Electronics"
-                            [(ngModel)]="product.category" />
-                        <label for="category3">Electronics</label>
-                    </div>
-                    <div class="flex items-center gap-2 col-span-6">
-                        <p-radiobutton id="category4" name="category" value="Fitness" [(ngModel)]="product.category" />
-                        <label for="category4">Fitness</label>
-                    </div>
-                </div>
-            </div>-->
+            <div>
+                <label for="name" class="block font-bold mb-3">Nombre</label>
+                <input 
+                    type="text" 
+                    pInputText 
+                    id="name" 
+                    [(ngModel)]="user().name" 
+                    placeholder="Juanito Pérez" 
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['name'] }" 
+                    required 
+                    autofocus
+                    fluid 
+                />
+                <small class="text-red-500" *ngIf="!user().name || errors()['name']">{{ errors()['name'] ? errors()['name'] : 'El usuario es obligatorio.'}}</small>
+            </div>
+            <div>
+                <label for="telephone" class="block font-bold mb-3">Teléfono</label>
+                <input 
+                    type="text" 
+                    pInputText 
+                    id="telephone" 
+                    [(ngModel)]="user().telephone" 
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['telephone'] }"
+                    placeholder="+52 22 33 44 55 66" 
+                    autofocus 
+                    fluid
+                />
+                <small class="text-red-500" *ngIf="errors()['telephone']">{{ errors()['telephone'] ? errors()['telephone'] : 'El usuario es obligatorio.'}}</small>
+            </div>
+            <div>
+                <label for="profiles" class="block font-bold mb-3">Perfiles</label>
+                <p-multiSelect 
+                    id="profiles" 
+                    [options]="profiles" 
+                    [(ngModel)]="user().profiles" 
+                    [showClear]="true" 
+                    optionLabel="name"
+                    optionValue="id"
+                    placeholder="Selecciona" 
+                    appendTo="body" 
+                    display="chip" 
+                    fluid
+                />
+            </div>
         </div>
     </ng-template>
 
     <ng-template #footer>
-        <p-button label="Cancel" icon="pi pi-times" text (click)="hideDialog()" />
-        <p-button label="Save" icon="pi pi-check" (click)="saveUser()" />
+        <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" [loading]="processing" />
+        <p-button label="Guardar" icon="pi pi-check" (click)="saveUser()" [loading]="processing" />
     </ng-template>
 </p-dialog>
 
 <p-confirmdialog [style]="{ width: '450px' }" />
+
+<p-toast />
