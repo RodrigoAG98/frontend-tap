@@ -20,14 +20,55 @@ export class UserService {
     return this.http.get<User[]>(this.apiUrl, { params });
   }
 
-  createUser(deparment: User): Observable<string> {
-    return this.http.post<string>(this.apiUrl, deparment);
+  createUser(user: User, imageFile: File | null): Observable<string> {
+    const formData = new FormData();
+
+    // Adjuntar campos de texto
+    formData.append('user', user.user);
+    formData.append('name', user.name);
+    formData.append('telephone', user.telephone ?? '');
+    
+    // Adjuntar arreglo de perfiles si existe
+    if (user.profiles) {
+      user.profiles.forEach((profileId: string) => {
+        formData.append('profiles[]', profileId.toString());
+      });
+    }
+
+    // Adjuntar la imagen si fue seleccionada
+    if (imageFile) {
+      formData.append('foto', imageFile, imageFile.name);
+    }
+
+    return this.http.post<string>(this.apiUrl, formData);
   }
 
-  updateUser(id: string, deparment: Partial<User>): Observable<string> {
-    return this.http.put<string>(`${this.apiUrl}/${id}`, deparment);
+  updateUser(id: string, user: Partial<User>, imageFile: File | null): Observable<string> {
+    const formData = new FormData();
+
+    // Adjuntar campos de texto
+    formData.append('user', user.user ?? '');
+    formData.append('name', user.name ?? '');
+    formData.append('telephone', user.telephone ?? '');
+    
+    // Adjuntar arreglo de perfiles si existe
+    if (user.profiles) {
+      user.profiles.forEach((profileId: string) => {
+        formData.append('profiles[]', profileId.toString());
+      });
+    }
+
+    // Adjuntar la imagen si fue seleccionada
+    if (imageFile) {
+      formData.append('foto', imageFile, imageFile.name);
+    }
+    return this.http.post<string>(`${this.apiUrl}/${id}`, formData);
   }
 
+  avatarUser(id: string): Observable<string> {
+    return this.http.get<string>(`${this.apiUrl}/${id}/avatar`);
+  }
+  
   deleteUser(id: string): Observable<string> {
     return this.http.delete<string>(`${this.apiUrl}/${id}`);
   }

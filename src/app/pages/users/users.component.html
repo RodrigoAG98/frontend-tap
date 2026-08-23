@@ -62,8 +62,17 @@
 <p-dialog [(visible)]="productDialog" [style]="{ width: '450px' }" header="Detalles del usuario" [modal]="true">
     <ng-template #content>
         <div class="flex flex-col gap-6">
-            <!--<img [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + product.image" [alt]="product.image"
-                class="block m-auto pb-4" *ngIf="product.image" />-->
+            @if (imagePreview()) {
+                <div class="flex justify-center">
+                    <img [src]="imagePreview()" alt="Vista previa" class="w-24 h-24 object-cover rounded-full shadow" />
+                </div>
+            }
+            <div>
+                <label for="foto" class="block font-bold mb-3">Foto</label>
+                <input type="file" accept="image/png, image/jpg, image/jpeg" (change)="onFileSelected($event)"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-600" />
+                <small class="text-red-500" *ngIf="errors()['foto']">{{ errors()['foto'] ? errors()['foto'] : ''}}</small>
+            </div>
             <div>
                 <label for="user" class="block font-bold mb-3">Usuario</label>
                 <input 

@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { Table, TableModule } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
@@ -14,6 +14,7 @@ import { TagModule } from 'primeng/tag';
 import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { FileUploadModule } from 'primeng/fileupload';
 import { UserService } from './Services/user.service';
 import { User } from '../../models/user.model';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -46,7 +47,8 @@ interface ExportColumn {
         TagModule,
         InputIconModule,
         IconFieldModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        FileUploadModule
     ],
     templateUrl: 'users.component.html',
     providers: [MessageService, UserService, ConfirmationService]
@@ -67,6 +69,11 @@ export class Users implements OnInit {
         telephone: '',
         profiles: []
     });
+    // Signal para guardar el archivo físico
+    selectedFile = signal<File | null>(null);
+  
+    // Signal para la vista previa en base64
+    imagePreview = signal<string | null>(null);
 
     errors = signal<Record<string, string>>({});
 
@@ -93,6 +100,7 @@ export class Users implements OnInit {
     ngOnInit() {
         this.loadUsers();
     }
+
     //Carga de usuarios
     loadUsers(search?: string) {
         this.loadingUsers = true;
@@ -107,10 +115,25 @@ export class Users implements OnInit {
             error: (err) => console.error('Error cargando usuarios:', err)
         });
     }
+
+    getAvatar() {
+        const userId = this.user().id
+        if(userId){
+            this.userService.avatarUser(userId).subscribe({
+                next: (data) => {
+                    //Asignamos valores
+                    this.imagePreview.set(data);
+                },
+                error: (err) => console.error('Error obteniendo el avatar:', err)
+            });
+        }
+    }
+
     //Filtro local en front
     onGlobalFilter() {
         this.loadUsers(this.search);
     }
+
     //Resetear objecto signal de user y abrimos dialogo
     openNew() {
         this.user.set({
@@ -119,18 +142,25 @@ export class Users implements OnInit {
             telephone: '',
             profiles: []
         });
+        this.imagePreview.set(null);
         this.productDialog = true;
     }
+
     //Establecemos valores para User y abrimos dialogo
     editUser(user: User) {
         this.user.set({ ...user });
+        this.getAvatar();
         this.productDialog = true;
     }
+
     //Cerramos dialogo y limpiamos errores
     hideDialog() {
         this.productDialog = false;
+        this.selectedFile.set(null);
+        this.imagePreview.set(null);
         this.errors.set({});
     }
+
     //Eliminación de usuario
     deleteUser(user: User) {
         const userId = user.id;
@@ -152,6 +182,7 @@ export class Users implements OnInit {
             }
         });
     }
+
     //Guardar o actualizar según sea el caso
     saveUser() {
         this.errors.set({});
@@ -165,7 +196,8 @@ export class Users implements OnInit {
                 telephone: this.user().telephone,
                 profiles: this.user().profiles,
             };
-            this.userService.createUser(newUser).subscribe({
+            const file = this.selectedFile();
+            this.userService.createUser(newUser,file).subscribe({
                 next: (res:string) => {
                     this.processing = false;
                     this.loadUsers();
@@ -174,6 +206,7 @@ export class Users implements OnInit {
                 },
                 error: (err) => {
                     this.setErrors(err);
+                    this.processing = false;
                 }
             });
         }else{
@@ -185,7 +218,8 @@ export class Users implements OnInit {
                 telephone: this.user().telephone,
                 profiles: this.user().profiles,
             };
-            this.userService.updateUser(userId, updatedUser).subscribe({
+            const file = this.selectedFile();
+            this.userService.updateUser(userId, updatedUser,file).subscribe({
                 next: (res:string) => {
                     this.processing = false;
                     this.loadUsers();
@@ -194,6 +228,7 @@ export class Users implements OnInit {
                 },
                 error: (err) => {
                     this.setErrors(err);
+                    this.processing = false;
                 }
             });
         }
@@ -210,6 +245,7 @@ export class Users implements OnInit {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
     }
+
     //Exportar a pdf
     exportPdf() {
         this.loadingPdf = true;
@@ -224,6 +260,7 @@ export class Users implements OnInit {
             }
         });
     }
+
     //Exportar a Xlsx
     exportXlsx() {
         this.loadingXlsx = true;
@@ -238,6 +275,7 @@ export class Users implements OnInit {
             }
         });
     }
+
     //Manejo de errores
     setErrors(err: HttpErrorResponse) {
         // Capturamos el error 422 de Laravel
@@ -262,5 +300,18 @@ export class Users implements OnInit {
             summary: msg,
             life: 3000
         });
+    }
+
+    onFileSelected(event: Event): void {
+        const input = event.target as HTMLInputElement;
+        if (input.files && input.files[0]) {
+        const file = input.files[0];
+        this.selectedFile.set(file);
+
+        // Generar vista previa dinámica
+        const reader = new FileReader();
+        reader.onload = () => this.imagePreview.set(reader.result as string);
+        reader.readAsDataURL(file);
+        }
     }
 }
