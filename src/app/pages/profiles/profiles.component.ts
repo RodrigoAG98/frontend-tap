@@ -1,24 +1,22 @@
 import { Component, OnInit, signal, ViewChild } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { Table, TableModule } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
-import { RippleModule } from 'primeng/ripple';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
-import { RatingModule } from 'primeng/rating';
 import { InputTextModule } from 'primeng/inputtext';
-import { TextareaModule } from 'primeng/textarea';
-import { SelectModule } from 'primeng/select';
-import { RadioButtonModule } from 'primeng/radiobutton';
+import { MultiSelectModule } from 'primeng/multiselect';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
 import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { Product, ProductService } from '../service/product.service';
+import { ProfileService } from './Services/profile.service';
+import { Profile } from '../../models/profile.model';
+import { HttpErrorResponse } from '@angular/common/http';
 
 interface Column {
     field: string;
@@ -39,14 +37,10 @@ interface ExportColumn {
         TableModule,
         FormsModule,
         ButtonModule,
-        RippleModule,
         ToastModule,
         ToolbarModule,
-        RatingModule,
         InputTextModule,
-        TextareaModule,
-        SelectModule,
-        RadioButtonModule,
+        MultiSelectModule,
         InputNumberModule,
         DialogModule,
         TagModule,
@@ -54,334 +48,219 @@ interface ExportColumn {
         IconFieldModule,
         ConfirmDialogModule
     ],
-    template: `
-        <p-toolbar styleClass="mb-6">
-            <ng-template #start>
-                <p-button label="New" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
-                <p-button severity="secondary" label="Delete" icon="pi pi-trash" outlined (onClick)="deleteSelectedProducts()" [disabled]="!selectedProducts || !selectedProducts.length" />
-            </ng-template>
-
-            <ng-template #end>
-                <p-button label="Export" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV()" />
-            </ng-template>
-        </p-toolbar>
-
-        <p-table
-            #dt
-            [value]="products()"
-            [rows]="10"
-            [columns]="cols"
-            [paginator]="true"
-            [globalFilterFields]="['name', 'country.name', 'representative.name', 'status']"
-            [tableStyle]="{ 'min-width': '75rem' }"
-            [(selection)]="selectedProducts"
-            [rowHover]="true"
-            dataKey="id"
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} products"
-            [showCurrentPageReport]="true"
-            [rowsPerPageOptions]="[10, 20, 30]"
-        >
-            <ng-template #caption>
-                <div class="flex items-center justify-between">
-                    <h5 class="m-0">Manage Products</h5>
-                    <p-iconfield>
-                        <p-inputicon styleClass="pi pi-search" />
-                        <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search..." />
-                    </p-iconfield>
-                </div>
-            </ng-template>
-            <ng-template #header>
-                <tr>
-                    <th style="width: 3rem">
-                        <p-tableHeaderCheckbox />
-                    </th>
-                    <th style="min-width: 16rem">Code</th>
-                    <th pSortableColumn="name" style="min-width:16rem">
-                        Name
-                        <p-sortIcon field="name" />
-                    </th>
-                    <th>Image</th>
-                    <th pSortableColumn="price" style="min-width: 8rem">
-                        Price
-                        <p-sortIcon field="price" />
-                    </th>
-                    <th pSortableColumn="category" style="min-width:10rem">
-                        Category
-                        <p-sortIcon field="category" />
-                    </th>
-                    <th pSortableColumn="rating" style="min-width: 12rem">
-                        Reviews
-                        <p-sortIcon field="rating" />
-                    </th>
-                    <th pSortableColumn="inventoryStatus" style="min-width: 12rem">
-                        Status
-                        <p-sortIcon field="inventoryStatus" />
-                    </th>
-                    <th style="min-width: 12rem"></th>
-                </tr>
-            </ng-template>
-            <ng-template #body let-product>
-                <tr>
-                    <td style="width: 3rem">
-                        <p-tableCheckbox [value]="product" />
-                    </td>
-                    <td style="min-width: 12rem">{{ product.code }}</td>
-                    <td style="min-width: 16rem">{{ product.name }}</td>
-                    <td>
-                        <img [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + product.image" [alt]="product.name" style="width: 64px" class="rounded" />
-                    </td>
-                    <td>{{ product.price | currency: 'USD' }}</td>
-                    <td>{{ product.category }}</td>
-                    <td>
-                        <p-rating [(ngModel)]="product.rating" [readonly]="true" />
-                    </td>
-                    <td>
-                        <p-tag [value]="product.inventoryStatus" [severity]="getSeverity(product.inventoryStatus)" />
-                    </td>
-                    <td>
-                        <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true" (click)="editProduct(product)" />
-                        <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true" (click)="deleteProduct(product)" />
-                    </td>
-                </tr>
-            </ng-template>
-        </p-table>
-
-        <p-dialog [(visible)]="productDialog" [style]="{ width: '450px' }" header="Product Details" [modal]="true">
-            <ng-template #content>
-                <div class="flex flex-col gap-6">
-                    <img [src]="'https://primefaces.org/cdn/primeng/images/demo/product/' + product.image" [alt]="product.image" class="block m-auto pb-4" *ngIf="product.image" />
-                    <div>
-                        <label for="name" class="block font-bold mb-3">Name</label>
-                        <input type="text" pInputText id="name" [(ngModel)]="product.name" required autofocus fluid />
-                        <small class="text-red-500" *ngIf="submitted && !product.name">Name is required.</small>
-                    </div>
-                    <div>
-                        <label for="description" class="block font-bold mb-3">Description</label>
-                        <textarea id="description" pTextarea [(ngModel)]="product.description" required rows="3" cols="20" fluid></textarea>
-                    </div>
-
-                    <div>
-                        <label for="inventoryStatus" class="block font-bold mb-3">Inventory Status</label>
-                        <p-select [(ngModel)]="product.inventoryStatus" inputId="inventoryStatus" [options]="statuses" optionLabel="label" optionValue="label" placeholder="Select a Status" fluid />
-                    </div>
-
-                    <div>
-                        <span class="block font-bold mb-4">Category</span>
-                        <div class="grid grid-cols-12 gap-4">
-                            <div class="flex items-center gap-2 col-span-6">
-                                <p-radiobutton id="category1" name="category" value="Accessories" [(ngModel)]="product.category" />
-                                <label for="category1">Accessories</label>
-                            </div>
-                            <div class="flex items-center gap-2 col-span-6">
-                                <p-radiobutton id="category2" name="category" value="Clothing" [(ngModel)]="product.category" />
-                                <label for="category2">Clothing</label>
-                            </div>
-                            <div class="flex items-center gap-2 col-span-6">
-                                <p-radiobutton id="category3" name="category" value="Electronics" [(ngModel)]="product.category" />
-                                <label for="category3">Electronics</label>
-                            </div>
-                            <div class="flex items-center gap-2 col-span-6">
-                                <p-radiobutton id="category4" name="category" value="Fitness" [(ngModel)]="product.category" />
-                                <label for="category4">Fitness</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-12 gap-4">
-                        <div class="col-span-6">
-                            <label for="price" class="block font-bold mb-3">Price</label>
-                            <p-inputnumber id="price" [(ngModel)]="product.price" mode="currency" currency="USD" locale="en-US" fluid />
-                        </div>
-                        <div class="col-span-6">
-                            <label for="quantity" class="block font-bold mb-3">Quantity</label>
-                            <p-inputnumber id="quantity" [(ngModel)]="product.quantity" fluid />
-                        </div>
-                    </div>
-                </div>
-            </ng-template>
-
-            <ng-template #footer>
-                <p-button label="Cancel" icon="pi pi-times" text (click)="hideDialog()" />
-                <p-button label="Save" icon="pi pi-check" (click)="saveProduct()" />
-            </ng-template>
-        </p-dialog>
-
-        <p-confirmdialog [style]="{ width: '450px' }" />
-    `,
-    providers: [MessageService, ProductService, ConfirmationService]
+    templateUrl: 'profiles.component.html',
+    providers: [MessageService, ProfileService, ConfirmationService]
 })
 export class Profiles implements OnInit {
-    productDialog: boolean = false;
+    profileDialog: boolean = false;
+    loadingProfiles: boolean = false;
+    loadingPdf: boolean = false;
+    loadingXlsx: boolean = false;
+    processing: boolean = false;
+    search: string = '';
 
-    products = signal<Product[]>([]);
+    profiles = signal<Profile[]>([]);
+    //Equivalente a Objeto o Form en Vue
+    profile = signal<Profile>({
+        profile_code: '',
+        name: '',
+        sections: [],
+    });
 
-    product!: Product;
+    errors = signal<Record<string, string>>({});
 
-    selectedProducts!: Product[] | null;
-
-    submitted: boolean = false;
-
-    statuses!: any[];
-
-    @ViewChild('dt') dt!: Table;
-
-    exportColumns!: ExportColumn[];
-
-    cols!: Column[];
+    //Columnas para PrimeNg
+    cols: Column[] = [
+            { field: 'code', header: 'Code', customExportHeader: 'Product Code' },
+            { field: 'name', header: 'Name' },
+        ];
 
     constructor(
-        private productService: ProductService,
+        private profileService: ProfileService,
         private messageService: MessageService,
         private confirmationService: ConfirmationService
     ) {}
 
-    exportCSV() {
-        this.dt.exportCSV();
-    }
-
     ngOnInit() {
-        this.loadDemoData();
+        this.loadProfiles();
     }
 
-    loadDemoData() {
-        this.productService.getProducts().then((data) => {
-            this.products.set(data);
+    //Carga de usuarios
+    loadProfiles(search?: string) {
+        this.loadingProfiles = true;
+        //Realizamos petición
+        this.profileService.getProfiles(search).subscribe({
+            next: (data) => {
+                //Asignamos valores
+                this.profiles.set(data),
+                this.processing = false;
+                this.loadingProfiles = false;
+            },
+            error: (err) => console.error('Error cargando usuarios:', err)
         });
-
-        this.statuses = [
-            { label: 'INSTOCK', value: 'instock' },
-            { label: 'LOWSTOCK', value: 'lowstock' },
-            { label: 'OUTOFSTOCK', value: 'outofstock' }
-        ];
-
-        this.cols = [
-            { field: 'code', header: 'Code', customExportHeader: 'Product Code' },
-            { field: 'name', header: 'Name' },
-            { field: 'image', header: 'Image' },
-            { field: 'price', header: 'Price' },
-            { field: 'category', header: 'Category' }
-        ];
-
-        this.exportColumns = this.cols.map((col) => ({ title: col.header, dataKey: col.field }));
     }
 
-    onGlobalFilter(table: Table, event: Event) {
-        table.filterGlobal((event.target as HTMLInputElement).value, 'contains');
+    //Filtro local en front
+    onGlobalFilter() {
+        this.loadProfiles(this.search);
     }
 
+    //Resetear objecto signal de user y abrimos dialogo
     openNew() {
-        this.product = {};
-        this.submitted = false;
-        this.productDialog = true;
-    }
-
-    editProduct(product: Product) {
-        this.product = { ...product };
-        this.productDialog = true;
-    }
-
-    deleteSelectedProducts() {
-        this.confirmationService.confirm({
-            message: 'Are you sure you want to delete the selected products?',
-            header: 'Confirm',
-            icon: 'pi pi-exclamation-triangle',
-            accept: () => {
-                this.products.set(this.products().filter((val) => !this.selectedProducts?.includes(val)));
-                this.selectedProducts = null;
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Products Deleted',
-                    life: 3000
-                });
-            }
+        this.profile.set({
+            profile_code: '',
+            name: '',
+            sections: []
         });
+        this.profileDialog = true;
     }
 
+    //Establecemos valores para User y abrimos dialogo
+    editProfile(profile: Profile) {
+        this.profile.set({ ...profile });
+        this.profileDialog = true;
+    }
+
+    //Cerramos dialogo y limpiamos errores
     hideDialog() {
-        this.productDialog = false;
-        this.submitted = false;
+        this.profileDialog = false;
+        this.errors.set({});
     }
 
-    deleteProduct(product: Product) {
+    //Eliminación de usuario
+    deleteProfile(profile: Profile) {
+        const userId = profile.id;
+        if (!userId) return;
         this.confirmationService.confirm({
-            message: 'Are you sure you want to delete ' + product.name + '?',
+            message: 'Estás seguro que quieres eliminar a ' + profile.name + '?',
             header: 'Confirm',
             icon: 'pi pi-exclamation-triangle',
+            acceptLabel: 'Sí',
+            rejectLabel: 'No',
             accept: () => {
-                this.products.set(this.products().filter((val) => val.id !== product.id));
-                this.product = {};
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Deleted',
-                    life: 3000
+                this.profileService.deleteProfile(userId).subscribe({
+                    next: (res:string) => {
+                        this.loadProfiles();
+                        this.showToast('success',res);
+                    },
+                    error: (err) => console.error('Error eliminando el usuario:', err)
                 });
             }
         });
     }
 
-    findIndexById(id: string): number {
-        let index = -1;
-        for (let i = 0; i < this.products().length; i++) {
-            if (this.products()[i].id === id) {
-                index = i;
-                break;
+    //Guardar o actualizar según sea el caso
+    saveProfile() {
+        this.errors.set({});
+        this.processing = true;
+        const userId = this.profile().id;
+        //Sino existe un id creamos nuevo usuario
+        if (!userId){
+            const newProfile: Profile = {
+                profile_code: this.profile().profile_code,
+                name: this.profile().name,
+                sections: []
+            };
+            this.profileService.createProfile(newProfile).subscribe({
+                next: (res:string) => {
+                    this.processing = false;
+                    this.loadProfiles();
+                    this.hideDialog();
+                    this.showToast('success',res);
+                },
+                error: (err) => {
+                    this.setErrors(err);
+                    this.processing = false;
+                }
+            });
+        }else{
+            //De otro modo actualizamos el existente
+            const updatedProfile: Profile = {
+                id: this.profile().id,
+                profile_code: this.profile().profile_code,
+                name: this.profile().name,
+                sections: []
+            };
+            this.profileService.updateProfile(userId, updatedProfile).subscribe({
+                next: (res:string) => {
+                    this.processing = false;
+                    this.loadProfiles();
+                    this.hideDialog();
+                    this.showToast('success',res);
+                },
+                error: (err) => {
+                    this.setErrors(err);
+                    this.processing = false;
+                }
+            });
+        }
+    }
+
+    // Función genérica para descargar archivos Blob
+    private downloadFile(blob: Blob, fileName: string): void {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }
+
+    //Exportar a pdf
+    exportPdf() {
+        this.loadingPdf = true;
+        this.profileService.exportPdf().subscribe({
+            next: (blob: Blob) => {
+                this.downloadFile(blob, `reporte_perfiles_${new Date().getTime()}.pdf`);
+                this.loadingPdf=false;
+            },
+            error: (err: HttpErrorResponse) => {
+                console.error('Error al exportar Excel:', err);
+                this.loadingPdf = false;
             }
-        }
-
-        return index;
+        });
     }
 
-    createId(): string {
-        let id = '';
-        var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        for (var i = 0; i < 5; i++) {
-            id += chars.charAt(Math.floor(Math.random() * chars.length));
-        }
-        return id;
-    }
-
-    getSeverity(status: string) {
-        switch (status) {
-            case 'INSTOCK':
-                return 'success';
-            case 'LOWSTOCK':
-                return 'warn';
-            case 'OUTOFSTOCK':
-                return 'danger';
-            default:
-                return 'info';
-        }
-    }
-
-    saveProduct() {
-        this.submitted = true;
-        let _products = this.products();
-        if (this.product.name?.trim()) {
-            if (this.product.id) {
-                _products[this.findIndexById(this.product.id)] = this.product;
-                this.products.set([..._products]);
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Updated',
-                    life: 3000
-                });
-            } else {
-                this.product.id = this.createId();
-                this.product.image = 'product-placeholder.svg';
-                this.messageService.add({
-                    severity: 'success',
-                    summary: 'Successful',
-                    detail: 'Product Created',
-                    life: 3000
-                });
-                this.products.set([..._products, this.product]);
+    //Exportar a Xlsx
+    exportXlsx() {
+        this.loadingXlsx = true;
+            this.profileService.exportExcel().subscribe({
+            next: (blob: Blob) => {
+                this.downloadFile(blob, `perfiles_${new Date().getTime()}.xlsx`);
+                this.loadingXlsx=false;
+            },
+            error: (err: HttpErrorResponse) => {
+                console.error('Error al exportar Excel:', err);
+                this.loadingXlsx = false;
             }
+        });
+    }
 
-            this.productDialog = false;
-            this.product = {};
+    //Manejo de errores
+    setErrors(err: HttpErrorResponse) {
+        // Capturamos el error 422 de Laravel
+        if (err.status === 422 && err.error?.errors) {
+            const rawErrors = err.error.errors;
+            const formattedErrors: Record<string, string> = {};
+
+            // Extraemos solo el primer mensaje de error de cada campo
+            Object.keys(rawErrors).forEach((key) => {
+                formattedErrors[key] = rawErrors[key][0];
+            });
+
+            // Actualizamos la Signal con los errores procesados
+            this.errors.set(formattedErrors);
+            this.showToast('warn','Por favor revisa el formulario.');
         }
+    }
+    //Agregar un nuevo mensaje a la pantala(toast)
+    showToast(type: string, msg: string){
+        this.messageService.add({
+            severity: type,
+            summary: msg,
+            life: 3000
+        });
     }
 }

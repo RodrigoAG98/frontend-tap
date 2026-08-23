@@ -54,7 +54,7 @@ interface ExportColumn {
     providers: [MessageService, UserService, ConfirmationService]
 })
 export class Users implements OnInit {
-    productDialog: boolean = false;
+    userDialog: boolean = false;
     loadingUsers: boolean = false;
     loadingPdf: boolean = false;
     loadingXlsx: boolean = false;
@@ -143,19 +143,19 @@ export class Users implements OnInit {
             profiles: []
         });
         this.imagePreview.set(null);
-        this.productDialog = true;
+        this.userDialog = true;
     }
 
     //Establecemos valores para User y abrimos dialogo
     editUser(user: User) {
         this.user.set({ ...user });
         this.getAvatar();
-        this.productDialog = true;
+        this.userDialog = true;
     }
 
     //Cerramos dialogo y limpiamos errores
     hideDialog() {
-        this.productDialog = false;
+        this.userDialog = false;
         this.selectedFile.set(null);
         this.imagePreview.set(null);
         this.errors.set({});
@@ -251,7 +251,7 @@ export class Users implements OnInit {
         this.loadingPdf = true;
         this.userService.exportPdf().subscribe({
             next: (blob: Blob) => {
-                this.downloadFile(blob, `reporte_${new Date().getTime()}.pdf`);
+                this.downloadFile(blob, `reporte_usuarios_${new Date().getTime()}.pdf`);
                 this.loadingPdf=false;
             },
             error: (err: HttpErrorResponse) => {
