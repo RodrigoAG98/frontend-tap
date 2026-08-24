@@ -88,7 +88,7 @@ export class Products implements OnInit {
         this.productService.getProducts(search).subscribe({
             next: (data) => {
                 //Asignamos valores
-                this.products.set(data),
+                this.products.set(data);
                 this.processing = false;
                 this.loadingProducts = false;
             },

@@ -16,7 +16,9 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { FileUploadModule } from 'primeng/fileupload';
 import { UserService } from './Services/user.service';
+import { ProfileService } from '../profiles/Services/profile.service';
 import { User } from '../../models/user.model';
+import { Profile } from '../../models/profile.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
 interface Column {
@@ -46,7 +48,7 @@ interface Column {
         FileUploadModule
     ],
     templateUrl: 'users.component.html',
-    providers: [MessageService, UserService, ConfirmationService]
+    providers: [MessageService, ProfileService, UserService, ConfirmationService]
 })
 export class Users implements OnInit {
     userDialog: boolean = false;
@@ -72,11 +74,7 @@ export class Users implements OnInit {
 
     errors = signal<Record<string, string>>({});
 
-    profiles = [
-        //{ name: 'English', id: 'en' },
-        //{ label: 'Deutsch', value: 'de' },
-        //{ label: 'Español', value: 'es' },
-    ];
+    profiles = signal<Profile[]>([]);
     //Columnas para PrimeNg
     cols: Column[] = [
             { field: 'code', header: 'Code', customExportHeader: 'Product Code' },
@@ -88,12 +86,26 @@ export class Users implements OnInit {
 
     constructor(
         private userService: UserService,
+        private profileService: ProfileService,
         private messageService: MessageService,
         private confirmationService: ConfirmationService
     ) {}
 
     ngOnInit() {
         this.loadUsers();
+        this.loadProfiles();
+    }
+
+    //Carga de perfiles
+    loadProfiles() {
+        //Realizamos petición
+        this.profileService.getProfiles().subscribe({
+            next: (data) => {
+                //Asignamos valores
+                this.profiles.set(data);
+            },
+            error: (err) => console.error('Error cargando usuarios:', err)
+        });
     }
 
     //Carga de usuarios
@@ -103,7 +115,7 @@ export class Users implements OnInit {
         this.userService.getUsers(search).subscribe({
             next: (data) => {
                 //Asignamos valores
-                this.users.set(data),
+                this.users.set(data);
                 this.processing = false;
                 this.loadingUsers = false;
             },

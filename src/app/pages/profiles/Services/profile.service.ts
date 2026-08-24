@@ -25,7 +25,7 @@ export class ProfileService {
   }
   
   updateProfile(id: string, profile: Partial<Profile>): Observable<string> {
-    return this.http.post<string>(`${this.apiUrl}/${id}`, profile);
+    return this.http.put<string>(`${this.apiUrl}/${id}`, profile);
   }
     
   deleteProfile(id: string): Observable<string> {

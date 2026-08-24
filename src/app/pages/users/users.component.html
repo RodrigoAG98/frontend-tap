@@ -121,7 +121,7 @@
                 <label for="profiles" class="block font-bold mb-3">Perfiles</label>
                 <p-multiSelect 
                     id="profiles" 
-                    [options]="profiles" 
+                    [options]="profiles()" 
                     [(ngModel)]="user().profiles" 
                     [showClear]="true" 
                     optionLabel="name"

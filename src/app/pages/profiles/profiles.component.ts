@@ -66,8 +66,9 @@ export class Profiles implements OnInit {
 
     //Columnas para PrimeNg
     cols: Column[] = [
-            { field: 'code', header: 'Code', customExportHeader: 'Product Code' },
+            { field: 'profile_code', header: 'Code', customExportHeader: 'Product Code' },
             { field: 'name', header: 'Name' },
+            { field: 'created_at', header: 'Fecha de creación' },
         ];
 
     constructor(
@@ -87,7 +88,7 @@ export class Profiles implements OnInit {
         this.profileService.getProfiles(search).subscribe({
             next: (data) => {
                 //Asignamos valores
-                this.profiles.set(data),
+                this.profiles.set(data);
                 this.processing = false;
                 this.loadingProfiles = false;
             },
