@@ -32,14 +32,26 @@ export class ProfileService {
     return this.http.delete<string>(`${this.apiUrl}/${id}`);
   }
   
-  exportExcel(): Observable<Blob> {
+  exportExcel(search?: string): Observable<Blob> {
+    let params = new HttpParams();
+    // Si se pasa un filtro, se adjunta a la consulta
+    if (search && search.trim() !== '') {
+      params = params.set('search', search.trim());
+    }
     return this.http.get(`${this.apiUrl}/export`, {
+      params,
       responseType: 'blob'
     });
   }
   
-  exportPdf(): Observable<Blob> {
+  exportPdf(search?: string): Observable<Blob> {
+    let params = new HttpParams();
+    // Si se pasa un filtro, se adjunta a la consulta
+    if (search && search.trim() !== '') {
+      params = params.set('search', search.trim());
+    }
     return this.http.get(`${this.apiUrl}/pdf`, {
+      params,
       responseType: 'blob'
     });
   }

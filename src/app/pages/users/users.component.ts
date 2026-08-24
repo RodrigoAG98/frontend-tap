@@ -25,11 +25,6 @@ interface Column {
     customExportHeader?: string;
 }
 
-interface ExportColumn {
-    title: string;
-    dataKey: string;
-}
-
 @Component({
     selector: 'app-crud',
     standalone: true,
@@ -249,7 +244,7 @@ export class Users implements OnInit {
     //Exportar a pdf
     exportPdf() {
         this.loadingPdf = true;
-        this.userService.exportPdf().subscribe({
+        this.userService.exportPdf(this.search).subscribe({
             next: (blob: Blob) => {
                 this.downloadFile(blob, `reporte_usuarios_${new Date().getTime()}.pdf`);
                 this.loadingPdf=false;
@@ -264,7 +259,7 @@ export class Users implements OnInit {
     //Exportar a Xlsx
     exportXlsx() {
         this.loadingXlsx = true;
-            this.userService.exportExcel().subscribe({
+            this.userService.exportExcel(this.search).subscribe({
             next: (blob: Blob) => {
                 this.downloadFile(blob, `usuarios_${new Date().getTime()}.xlsx`);
                 this.loadingXlsx=false;

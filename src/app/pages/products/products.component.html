@@ -1,0 +1,106 @@
+<p-toolbar styleClass="mb-6">
+    <ng-template #start>
+        <p-button label="Agregar" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
+    </ng-template>
+
+    <ng-template #end>
+        <p-button class="mx-1" label="Exportar PDF" icon="pi pi-file-pdf" severity="secondary" (onClick)="exportPdf()"
+            [loading]="loadingPdf" />
+        <p-button class="mx-1" label="Exportar XLSX" icon="pi pi-file-excel" severity="secondary"
+            (onClick)="exportXlsx()" [loading]="loadingXlsx" />
+    </ng-template>
+</p-toolbar>
+
+<p-table #dt [value]="products()" [rows]="10" [columns]="cols" [paginator]="true"
+    [globalFilterFields]="['name', 'user']" [tableStyle]="{ 'min-width': '75rem' }" [rowHover]="true" dataKey="id"
+    currentPageReportTemplate="Mostrando {first} al {last} de {totalRecords} usuarios" [showCurrentPageReport]="true"
+    [rowsPerPageOptions]="[10, 20, 30]" [loading]="loadingProducts">
+    <ng-template #caption>
+        <div class="flex items-center justify-between">
+            <h5 class="m-0">Administrar Productos</h5>
+            <p-iconfield>
+                <p-inputicon styleClass="pi pi-search" />
+                <input pInputText type="text" [(ngModel)]="search" (keyup.enter)="onGlobalFilter()"
+                    placeholder="Search..." />
+            </p-iconfield>
+        </div>
+    </ng-template>
+    <ng-template #header>
+        <tr>
+            <th style="min-width: 16rem">Código</th>
+            <th pSortableColumn="name" style="min-width:16rem">
+                Nombre
+                <p-sortIcon field="name" />
+            </th>
+            <th pSortableColumn="price" style="min-width:16rem">
+                Precio
+                <p-sortIcon field="price" />
+            </th>
+            <th pSortableColumn="created_at" style="min-width: 8rem">
+                Fecha de creación
+                <p-sortIcon field="create_at" />
+            </th>
+            <th style="min-width: 12rem"></th>
+        </tr>
+    </ng-template>
+    <ng-template #body let-product>
+        <tr>
+            <td style="min-width: 16rem">{{ product.product_code }}</td>
+            <td style="min-width: 16rem">{{ product.name }}</td>
+            <td style="min-width: 16rem">{{ product.price }}</td>
+            <td style="min-width: 16rem">{{ product.created_at }}</td>
+            <td>
+                <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
+                    (click)="editProduct(product)" />
+                <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
+                    (click)="deleteProduct(product)" />
+            </td>
+        </tr>
+    </ng-template>
+</p-table>
+
+<p-dialog [(visible)]="productDialog" [style]="{ width: '450px' }" header="Detalles del producto" [modal]="true">
+    <ng-template #content>
+        <div class="flex flex-col gap-6">
+            @if(product().product_code) {
+                <div>
+                    <label for="product_code" class="block font-bold mb-3">Código del producto</label>
+                    <input type="text" pInputText id="product_code" [(ngModel)]="product().product_code" placeholder="Juanito Pérez"
+                        [ngClass]="{ 'ng-invalid ng-dirty': errors()['profile_code'] }" required autofocus fluid />
+                    <small class="text-red-500" *ngIf="!product().product_code || errors()['name']">{{
+                        errors()['product_code'] ?
+                        errors()['product_code'] : 'El código es obligatorio.'}}</small>
+                </div>
+            }
+            <div>
+                <label for="name" class="block font-bold mb-3">Nombre</label>
+                <input type="text" pInputText id="name" [(ngModel)]="product().name" placeholder="Camioneta"
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['name'] }" required autofocus fluid />
+                <small class="text-red-500" *ngIf="!product().name || errors()['name']">{{ errors()['name'] ?
+                    errors()['name'] : 'El nombre es obligatorio.'}}</small>
+            </div>
+            <div>
+                <label for="brand" class="block font-bold mb-3">Marca</label>
+                <input type="text" pInputText id="brand" [(ngModel)]="product().brand" placeholder="Toyota"
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['brand'] }" required autofocus fluid />
+                <small class="text-red-500" *ngIf="!product().name || errors()['brand']">{{ errors()['brand'] ?
+                    errors()['brand'] : 'La marca es obligatoria.'}}</small>
+            </div>
+            <div>
+                <label for="price" class="block font-bold mb-3">Precio</label>
+                <p-inputnumber id="price" [(ngModel)]="product().price" [showButtons]="true" [ngClass]="{ 'ng-invalid ng-dirty': errors()['price'] }" required autofocus fluid [min]="0" [max]="999"/>
+                <small class="text-red-500" *ngIf="!product().price || product().price > 999 || errors()['price']">{{ errors()['price'] ?
+                    errors()['price'] : 'El precio es invalido.'}}</small>
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-template #footer>
+        <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" [loading]="processing" />
+        <p-button label="Guardar" icon="pi pi-check" (click)="saveProfile()" [loading]="processing" />
+    </ng-template>
+</p-dialog>
+
+<p-confirmdialog [style]="{ width: '450px' }" />
+
+<p-toast />

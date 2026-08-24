@@ -24,11 +24,6 @@ interface Column {
     customExportHeader?: string;
 }
 
-interface ExportColumn {
-    title: string;
-    dataKey: string;
-}
-
 @Component({
     selector: 'app-crud',
     standalone: true,
@@ -96,7 +91,7 @@ export class Profiles implements OnInit {
                 this.processing = false;
                 this.loadingProfiles = false;
             },
-            error: (err) => console.error('Error cargando usuarios:', err)
+            error: (err) => console.error('Error cargando perfiles:', err)
         });
     }
 
@@ -211,7 +206,7 @@ export class Profiles implements OnInit {
     //Exportar a pdf
     exportPdf() {
         this.loadingPdf = true;
-        this.profileService.exportPdf().subscribe({
+        this.profileService.exportPdf(this.search).subscribe({
             next: (blob: Blob) => {
                 this.downloadFile(blob, `reporte_perfiles_${new Date().getTime()}.pdf`);
                 this.loadingPdf=false;
@@ -226,7 +221,7 @@ export class Profiles implements OnInit {
     //Exportar a Xlsx
     exportXlsx() {
         this.loadingXlsx = true;
-            this.profileService.exportExcel().subscribe({
+            this.profileService.exportExcel(this.search).subscribe({
             next: (blob: Blob) => {
                 this.downloadFile(blob, `perfiles_${new Date().getTime()}.xlsx`);
                 this.loadingXlsx=false;

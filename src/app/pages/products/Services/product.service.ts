@@ -1,29 +1,58 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Product } from '../models/product.model';
+import { Product } from '../../../models/product.model';
 
 @Injectable({
   providedIn: 'root'
 })
 
-export class DepartmentService {
+export class ProductService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8000/api/users';
+  private apiUrl = 'http://localhost:8000/api/products';
 
-  getDepartments(): Observable<Product[]> {
-    return this.http.get<Product[]>(this.apiUrl);
+  getProducts(search?: string): Observable<Product[]> {
+    let params = new HttpParams();
+    // Si se pasa un filtro, se adjunta a la consulta
+    if (search && search.trim() !== '') {
+      params = params.set('search', search.trim());
+    }
+    return this.http.get<Product[]>(this.apiUrl, { params });
   }
-
-  createDepartment(deparment: Product): Observable<Product> {
-    return this.http.post<Product>(this.apiUrl, deparment);
+    
+  createProduct(product: Product): Observable<string> {
+    return this.http.post<string>(this.apiUrl, product);
   }
-
-  updateDepartment(id: string, deparment: Partial<Product>): Observable<Product> {
-    return this.http.put<Product>(`${this.apiUrl}/${id}`, deparment);
+    
+  updateProduct(id: string, product: Partial<Product>): Observable<string> {
+    return this.http.post<string>(`${this.apiUrl}/${id}`, product);
   }
-
-  deleteDepartment(id: string): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`);
+      
+  deleteProduct(id: string): Observable<string> {
+    return this.http.delete<string>(`${this.apiUrl}/${id}`);
+  }
+    
+  exportExcel(search?: string): Observable<Blob> {
+    let params = new HttpParams();
+    // Si se pasa un filtro, se adjunta a la consulta
+    if (search && search.trim() !== '') {
+      params = params.set('search', search.trim());
+    }
+    return this.http.get(`${this.apiUrl}/export`, {
+      params, 
+      responseType: 'blob'
+    });
+  }
+    
+  exportPdf(search?: string): Observable<Blob> {
+    let params = new HttpParams();
+    // Si se pasa un filtro, se adjunta a la consulta
+    if (search && search.trim() !== '') {
+      params = params.set('search', search.trim());
+    }
+    return this.http.get(`${this.apiUrl}/pdf`, {
+      params,
+      responseType: 'blob'
+    });
   }
 }
