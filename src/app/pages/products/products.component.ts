@@ -140,7 +140,7 @@ export class Products implements OnInit {
                         this.loadProducts();
                         this.showToast('success', res);
                     },
-                    error: (err) => console.error('Error eliminando el usuario:', err)
+                    error: (err) => console.error('Error eliminando el producto:', err)
                 });
             }
         });

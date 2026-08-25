@@ -73,6 +73,16 @@
                 <small class="text-red-500" *ngIf="!profile().name || errors()['name']">{{ errors()['name'] ?
                     errors()['name'] : 'El usuario es obligatorio.'}}</small>
             </div>
+            @if(profile().created_at) {
+                <div>
+                    <label for="name" class="block font-bold mb-3">Fecha de creación: {{ profile().created_at }}</label>
+                </div>
+            }
+            <div>
+                <label for="profiles" class="block font-bold mb-3">Secciones/Permisos</label>
+                <p-multiSelect id="profiles" [options]="permissions()" [(ngModel)]="profile().sections" [showClear]="true"
+                    optionLabel="name" optionValue="id" placeholder="Selecciona" appendTo="body" display="chip" fluid />
+            </div>
         </div>
     </ng-template>
 

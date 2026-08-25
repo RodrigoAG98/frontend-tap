@@ -6,14 +6,14 @@ import { Router } from '@angular/router';
 export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
-  private API_URL = 'http://localhost:8000/api';
+  private apiUrl = 'http://localhost:8000/api';
 
   login(credentials: { user: string; password: string }) {
-    return this.http.post<{ token: string }>(`${this.API_URL}/login`, credentials);
+    return this.http.post<{ token: string }>(`${this.apiUrl}/login`, credentials);
   }
 
   requestPasswordReset(email: string) {
-    return this.http.post(`${this.API_URL}/forgot-password`, { email });
+    return this.http.post(`${this.apiUrl}/forgot-password`, { email });
   }
 
   setToken(token: string) {

@@ -15,7 +15,9 @@ import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProfileService } from './Services/profile.service';
+import { PermissionService } from '../../core/services/permission.service';
 import { Profile } from '../../models/profile.model';
+import { Permission } from '../../models/permission.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
 interface Column {
@@ -41,10 +43,10 @@ interface Column {
         TagModule,
         InputIconModule,
         IconFieldModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
     ],
     templateUrl: 'profiles.component.html',
-    providers: [MessageService, ProfileService, ConfirmationService]
+    providers: [MessageService, ProfileService, ConfirmationService, PermissionService]
 })
 export class Profiles implements OnInit {
     profileDialog: boolean = false;
@@ -62,6 +64,8 @@ export class Profiles implements OnInit {
         sections: [],
     });
 
+    permissions = signal<Permission[]>([]);
+
     errors = signal<Record<string, string>>({});
 
     //Columnas para PrimeNg
@@ -74,11 +78,13 @@ export class Profiles implements OnInit {
     constructor(
         private profileService: ProfileService,
         private messageService: MessageService,
-        private confirmationService: ConfirmationService
+        private confirmationService: ConfirmationService,
+        private permissionService: PermissionService,
     ) {}
 
     ngOnInit() {
         this.loadProfiles();
+        this.loadPermissions();
     }
 
     //Carga de usuarios
@@ -139,7 +145,7 @@ export class Profiles implements OnInit {
                         this.loadProfiles();
                         this.showToast('success',res);
                     },
-                    error: (err) => console.error('Error eliminando el usuario:', err)
+                    error: (err) => console.error('Error eliminando el perfil:', err)
                 });
             }
         });
@@ -155,7 +161,7 @@ export class Profiles implements OnInit {
             const newProfile: Profile = {
                 profile_code: this.profile().profile_code,
                 name: this.profile().name,
-                sections: []
+                sections: this.profile().sections
             };
             this.profileService.createProfile(newProfile).subscribe({
                 next: (res:string) => {
@@ -175,7 +181,7 @@ export class Profiles implements OnInit {
                 id: this.profile().id,
                 profile_code: this.profile().profile_code,
                 name: this.profile().name,
-                sections: []
+                sections: this.profile().sections
             };
             this.profileService.updateProfile(userId, updatedProfile).subscribe({
                 next: (res:string) => {
@@ -257,6 +263,16 @@ export class Profiles implements OnInit {
             severity: type,
             summary: msg,
             life: 3000
+        });
+    }
+
+    loadPermissions(){
+        this.permissionService.getPermissions().subscribe({
+            next: (data) => {
+                //Asignamos valores
+                this.permissions.set(data);
+            },
+            error: (err) => console.error('Error cargando permisos:', err)
         });
     }
 }

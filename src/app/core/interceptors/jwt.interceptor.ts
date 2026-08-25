@@ -16,9 +16,11 @@ export const jwtInterceptor: HttpInterceptorFn = (req: any, next: any) => {
 
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 || error.status === 403) {
+      if (error.status === 401) {
         localStorage.removeItem('auth_token');
         router.navigate(['/auth/login']);
+      } else if (error.status === 403) {
+        router.navigate(['/auth/access']);
       }
       return throwError(() => error);
     })
