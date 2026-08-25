@@ -1,3 +1,17 @@
+# Sistema de Admisión Terminal Portuaria
+
+El siguiente sistema fue desarrollado utilizando el template de SAKAI de primeng
+
+Instalar dependecias con el gestor de paquetes de su preferencia npm/pnpm
+```bash
+pnpm i
+```
+
+##datos de acceso
+
+user: admin@tao.com
+pass: password
+
 # Sakai19
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.6.
