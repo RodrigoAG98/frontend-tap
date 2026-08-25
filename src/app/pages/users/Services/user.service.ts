@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { User } from '../../../models/user.model';
+import { environment } from '../../../../enviroments/environment.development';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,7 @@ import { User } from '../../../models/user.model';
 
 export class UserService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8000/api/users';
+  private apiUrl = `${environment.apiUrl}/users`;
 
   getUsers(search?: string): Observable<User[]> {
     let params = new HttpParams();

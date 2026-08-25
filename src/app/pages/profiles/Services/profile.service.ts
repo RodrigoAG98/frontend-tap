@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Profile } from '../../../models/profile.model';
+import { environment } from '../../../../enviroments/environment.development';
 
 @Injectable({
   providedIn: 'root'
@@ -9,7 +10,7 @@ import { Profile } from '../../../models/profile.model';
 
 export class ProfileService {
   private http = inject(HttpClient);
-  private apiUrl = 'http://localhost:8000/api/profiles';
+  private apiUrl = `${environment.apiUrl}/profiles`;
   
   getProfiles(search?: string): Observable<Profile[]> {
     let params = new HttpParams();

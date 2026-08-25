@@ -104,7 +104,7 @@ export class Users implements OnInit {
                 //Asignamos valores
                 this.profiles.set(data);
             },
-            error: (err) => console.error('Error cargando usuarios:', err)
+            error: (err) => console.error('Error cargando perfiles:', err)
         });
     }
 
