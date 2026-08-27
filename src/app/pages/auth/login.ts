@@ -30,6 +30,7 @@ export class Login {
         this.authService.login({ user: this.user, password: this.password }).subscribe({
         next: (res: any) => {
             this.authService.setToken(res.access_token);
+            this.authService.setPermissions(res.permissions);
             this.router.navigate(['/']);
         },
         error: () => alert('Credenciales incorrectas')

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
@@ -16,6 +16,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProfileService } from './Services/profile.service';
 import { PermissionService } from '../../core/services/permission.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Profile } from '../../models/profile.model';
 import { Permission } from '../../models/permission.model';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -49,6 +50,7 @@ interface Column {
     providers: [MessageService, ProfileService, ConfirmationService, PermissionService]
 })
 export class Profiles implements OnInit {
+    private authService = inject(AuthService);
     profileDialog: boolean = false;
     loadingProfiles: boolean = false;
     loadingPdf: boolean = false;
@@ -85,6 +87,10 @@ export class Profiles implements OnInit {
     ngOnInit() {
         this.loadProfiles();
         this.loadPermissions();
+    }
+
+    can(permission: string): boolean {
+        return this.authService.hasPermission(permission);
     }
 
     //Carga de usuarios

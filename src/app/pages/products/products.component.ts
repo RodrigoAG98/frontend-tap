@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, ViewChild } from '@angular/core';
+import { Component, OnInit, signal, inject } from '@angular/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { CommonModule } from '@angular/common';
@@ -15,6 +15,7 @@ import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProductService } from './Services/product.service';
+import { AuthService } from '../../core/services/auth.service';
 import { Product } from '../../models/product.model';
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -47,6 +48,7 @@ interface Column {
     providers: [MessageService, ProductService, ConfirmationService]
 })
 export class Products implements OnInit {
+    private authService = inject(AuthService);
     productDialog: boolean = false;
     loadingProducts: boolean = false;
     loadingPdf: boolean = false;
@@ -99,6 +101,10 @@ export class Products implements OnInit {
     //Filtro local en front
     onGlobalFilter() {
         this.loadProducts(this.search);
+    }
+
+    can(permission: string): boolean {
+        return this.authService.hasPermission(permission);
     }
 
     //Resetear objecto signal de user y abrimos dialogo

@@ -1,9 +1,9 @@
 <p-toolbar styleClass="mb-6">
     <ng-template #start>
-        <p-button label="Agregar" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" />
+        <p-button label="Agregar" icon="pi pi-plus" severity="secondary" class="mr-2" (onClick)="openNew()" *ngIf="can('users:create')"/>
     </ng-template>
 
-    <ng-template #end>
+    <ng-template #end *ngIf="can('users:export')">
         <p-button class="mx-1" label="Exportar PDF" icon="pi pi-file-pdf" severity="secondary" (onClick)="exportPdf()" [loading]="loadingPdf"/>
         <p-button class="mx-1" label="Exportar XLSX" icon="pi pi-file-excel" severity="secondary" (onClick)="exportXlsx()" [loading]="loadingXlsx"/>
     </ng-template>
@@ -51,9 +51,9 @@
             <td style="min-width: 16rem">{{ user.created_at }}</td>
             <td>
                 <p-button icon="pi pi-pencil" class="mr-2" [rounded]="true" [outlined]="true"
-                    (click)="editUser(user)" />
+                    (click)="editUser(user)" *ngIf="can('users:update')" />
                 <p-button icon="pi pi-trash" severity="danger" [rounded]="true" [outlined]="true"
-                    (click)="deleteUser(user)" />
+                    (click)="deleteUser(user)" *ngIf="can('users:delete')"/>
             </td>
         </tr>
     </ng-template>
