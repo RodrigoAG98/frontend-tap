@@ -1,0 +1,50 @@
+<p-dialog [(visible)]="userDialog" [style]="{ width: '450px' }" header="Detalles del usuario" [modal]="true">
+    <ng-template #content>
+        <div class="flex flex-col gap-6">
+            @if (imagePreview()) {
+            <div class="flex justify-center">
+                <img [src]="imagePreview()" alt="Vista previa" class="w-24 h-24 object-cover rounded-full shadow" />
+            </div>
+            }
+            <div>
+                <label for="foto" class="block font-bold mb-3">Foto</label>
+                <input type="file" accept="image/png, image/jpg, image/jpeg" (change)="onFileSelected($event)"
+                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-600" />
+                <small class="text-red-500" *ngIf="errors()['foto']">{{ errors()['foto'] ? errors()['foto'] :
+                    ''}}</small>
+            </div>
+            <div>
+                <label for="user" class="block font-bold mb-3">Usuario</label>
+                <input type="email" pInputText id="user" [(ngModel)]="user.user" placeholder="ejemplo@tap.com"
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['user'] }" required autofocus fluid />
+                <small class="text-red-500" *ngIf="!user.user || errors()['user']">{{ errors()['user'] ?
+                    errors()['user'] : 'El usuario es obligatorio.'}}</small>
+            </div>
+            <div>
+                <label for="name" class="block font-bold mb-3">Nombre</label>
+                <input type="text" pInputText id="name" [(ngModel)]="user.name" placeholder="Juanito Pérez"
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['name'] }" required autofocus fluid />
+                <small class="text-red-500" *ngIf="!user.name || errors()['name']">{{ errors()['name'] ?
+                    errors()['name'] : 'El usuario es obligatorio.'}}</small>
+            </div>
+            <div>
+                <label for="telephone" class="block font-bold mb-3">Teléfono</label>
+                <input type="text" pInputText id="telephone" [(ngModel)]="user.telephone"
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['telephone'] }" placeholder="+52 22 33 44 55 66"
+                    autofocus fluid />
+                <small class="text-red-500" *ngIf="errors()['telephone']">{{ errors()['telephone'] ?
+                    errors()['telephone'] : 'El usuario es obligatorio.'}}</small>
+            </div>
+            <div>
+                <label for="profiles" class="block font-bold mb-3">Perfiles</label>
+                <p-multiSelect id="profiles" [options]="profiles" [(ngModel)]="user.profiles" [showClear]="true"
+                    optionLabel="name" optionValue="id" placeholder="Selecciona" appendTo="body" display="chip" fluid />
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-template #footer>
+        <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" [loading]="processing" />
+        <p-button label="Guardar" icon="pi pi-check" (click)="saveUser()" [loading]="processing" />
+    </ng-template>
+</p-dialog>

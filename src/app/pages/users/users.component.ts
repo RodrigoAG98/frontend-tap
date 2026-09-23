@@ -9,7 +9,6 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
 import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -21,6 +20,7 @@ import { ProfileService } from '../profiles/Services/profile.service';
 import { User } from '../../models/user.model';
 import { Profile } from '../../models/profile.model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { NewUserComponent } from './new-user/new-user.component';
 
 interface Column {
     field: string;
@@ -41,12 +41,12 @@ interface Column {
         InputTextModule,
         MultiSelectModule,
         InputNumberModule,
-        DialogModule,
         TagModule,
         InputIconModule,
         IconFieldModule,
         ConfirmDialogModule,
-        FileUploadModule
+        FileUploadModule,
+        NewUserComponent
     ],
     templateUrl: 'users.component.html',
     providers: [MessageService, ProfileService, UserService, ConfirmationService]
@@ -68,11 +68,6 @@ export class Users implements OnInit {
         telephone: '',
         profiles: []
     });
-    // Signal para guardar el archivo físico
-    selectedFile = signal<File | null>(null);
-  
-    // Signal para la vista previa en base64
-    imagePreview = signal<string | null>(null);
 
     errors = signal<Record<string, string>>({});
 
@@ -129,19 +124,6 @@ export class Users implements OnInit {
         });
     }
 
-    getAvatar() {
-        const userId = this.user().id
-        if(userId){
-            this.userService.avatarUser(userId).subscribe({
-                next: (data) => {
-                    //Asignamos valores
-                    this.imagePreview.set(data);
-                },
-                error: (err) => console.error('Error obteniendo el avatar:', err)
-            });
-        }
-    }
-
     //Filtro local en front
     onGlobalFilter() {
         this.loadUsers(this.search);
@@ -155,23 +137,18 @@ export class Users implements OnInit {
             telephone: '',
             profiles: []
         });
-        this.imagePreview.set(null);
         this.userDialog = true;
+    }
+
+    //cerrar dialogo
+    closeDialog(){
+        this.userDialog = false;
     }
 
     //Establecemos valores para User y abrimos dialogo
     editUser(user: User) {
         this.user.set({ ...user });
-        this.getAvatar();
         this.userDialog = true;
-    }
-
-    //Cerramos dialogo y limpiamos errores
-    hideDialog() {
-        this.userDialog = false;
-        this.selectedFile.set(null);
-        this.imagePreview.set(null);
-        this.errors.set({});
     }
 
     //Eliminación de usuario
@@ -188,63 +165,12 @@ export class Users implements OnInit {
                 this.userService.deleteUser(userId).subscribe({
                     next: (res:string) => {
                         this.loadUsers();
-                        this.showToast('success',res);
+                        this.showToast({type:'success',message: res});
                     },
                     error: (err) => console.error('Error eliminando el usuario:', err)
                 });
             }
         });
-    }
-
-    //Guardar o actualizar según sea el caso
-    saveUser() {
-        this.errors.set({});
-        this.processing = true;
-        const userId = this.user().id;
-        //Sino existe un id creamos nuevo usuario
-        if (!userId){
-            const newUser: User = {
-                user: this.user().user,
-                name: this.user().name,
-                telephone: this.user().telephone,
-                profiles: this.user().profiles,
-            };
-            const file = this.selectedFile();
-            this.userService.createUser(newUser,file).subscribe({
-                next: (res:string) => {
-                    this.processing = false;
-                    this.loadUsers();
-                    this.hideDialog();
-                    this.showToast('success',res);
-                },
-                error: (err) => {
-                    this.setErrors(err);
-                    this.processing = false;
-                }
-            });
-        }else{
-            //De otro modo actualizamos el existente
-            const updatedUser: User = {
-                id: this.user().id,
-                user: this.user().user,
-                name: this.user().name,
-                telephone: this.user().telephone,
-                profiles: this.user().profiles,
-            };
-            const file = this.selectedFile();
-            this.userService.updateUser(userId, updatedUser,file).subscribe({
-                next: (res:string) => {
-                    this.processing = false;
-                    this.loadUsers();
-                    this.hideDialog();
-                    this.showToast('success',res);
-                },
-                error: (err) => {
-                    this.setErrors(err);
-                    this.processing = false;
-                }
-            });
-        }
     }
 
     // Función genérica para descargar archivos Blob
@@ -289,42 +215,13 @@ export class Users implements OnInit {
         });
     }
 
-    //Manejo de errores
-    setErrors(err: HttpErrorResponse) {
-        // Capturamos el error 422 de Laravel
-        if (err.status === 422 && err.error?.errors) {
-            const rawErrors = err.error.errors;
-            const formattedErrors: Record<string, string> = {};
-
-            // Extraemos solo el primer mensaje de error de cada campo
-            Object.keys(rawErrors).forEach((key) => {
-                formattedErrors[key] = rawErrors[key][0];
-            });
-
-            // Actualizamos la Signal con los errores procesados
-            this.errors.set(formattedErrors);
-            this.showToast('warn','Por favor revisa el formulario.');
-        }
-    }
     //Agregar un nuevo mensaje a la pantala(toast)
-    showToast(type: string, msg: string){
+    showToast(data: {type:string, message: string}){
         this.messageService.add({
-            severity: type,
-            summary: msg,
+            severity: data.type,
+            summary: data.message,
             life: 3000
         });
     }
 
-    onFileSelected(event: Event): void {
-        const input = event.target as HTMLInputElement;
-        if (input.files && input.files[0]) {
-        const file = input.files[0];
-        this.selectedFile.set(file);
-
-        // Generar vista previa dinámica
-        const reader = new FileReader();
-        reader.onload = () => this.imagePreview.set(reader.result as string);
-        reader.readAsDataURL(file);
-        }
-    }
 }
