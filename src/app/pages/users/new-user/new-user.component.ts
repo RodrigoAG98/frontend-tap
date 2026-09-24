@@ -20,6 +20,7 @@ export class NewUserComponent {
   @Input({required: true}) user!: User;
   @Input({required: true}) profiles!: Profile[];
   @Output() closeDialog = new EventEmitter<void>();
+  @Output() reloadData = new EventEmitter<void>();
   @Output() showToastMessage = new EventEmitter();
   private userService = inject(UserService);
   processing: boolean = false;
@@ -70,7 +71,7 @@ export class NewUserComponent {
             this.userService.createUser(newUser,file).subscribe({
                 next: (res:string) => {
                     this.processing = false;
-                    //this.loadUsers(); cambiar a emit
+                    this.reloadData.emit()
                     this.hideDialog();
                     this.showToastMessage.emit({type:'success', message: res})
                 },
@@ -92,7 +93,7 @@ export class NewUserComponent {
             this.userService.updateUser(userId, updatedUser,file).subscribe({
                 next: (res:string) => {
                     this.processing = false;
-                    //this.loadUsers();
+                    this.reloadData.emit()
                     this.hideDialog();
                     this.showToastMessage.emit({type:'success', message: res})
                 },
@@ -124,10 +125,10 @@ export class NewUserComponent {
 
     //Cerramos dialogo y limpiamos errores
     hideDialog() {
-        this.closeDialog.emit()
         this.selectedFile.set(null);
         this.imagePreview.set(null);
         this.errors.set({});
+        this.closeDialog.emit()
     }
 
     onFileSelected(event: Event): void {

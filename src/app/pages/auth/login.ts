@@ -23,17 +23,24 @@ export class Login {
 
     checked: boolean = false;
 
+    proccesing: boolean = false;
+
     private authService = inject(AuthService);
     private router = inject(Router);
 
     onLogin() {
+        this.proccesing=true;
         this.authService.login({ user: this.user, password: this.password }).subscribe({
-        next: (res: any) => {
-            this.authService.setToken(res.access_token);
-            this.authService.setPermissions(res.permissions);
-            this.router.navigate(['/']);
-        },
-        error: () => alert('Credenciales incorrectas')
+            next: (res: any) => {
+                this.authService.setToken(res.access_token);
+                this.authService.setPermissions(res.permissions);
+                this.proccesing=false;
+                this.router.navigate(['/']);
+            },
+            error: () => {
+                alert('Credenciales incorrectas');
+                this.proccesing=false;
+            }
         });
     }
 }

@@ -7,9 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { ToastModule } from 'primeng/toast';
 import { ToolbarModule } from 'primeng/toolbar';
 import { InputTextModule } from 'primeng/inputtext';
-import { MultiSelectModule } from 'primeng/multiselect';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
 import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -20,6 +18,7 @@ import { AuthService } from '../../core/services/auth.service';
 import { Profile } from '../../models/profile.model';
 import { Permission } from '../../models/permission.model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { NewProfileComponent } from './new-profile/new-profile.component';
 
 interface Column {
     field: string;
@@ -38,13 +37,12 @@ interface Column {
         ToastModule,
         ToolbarModule,
         InputTextModule,
-        MultiSelectModule,
         InputNumberModule,
-        DialogModule,
         TagModule,
         InputIconModule,
         IconFieldModule,
         ConfirmDialogModule,
+        NewProfileComponent
     ],
     templateUrl: 'profiles.component.html',
     providers: [MessageService, ProfileService, ConfirmationService, PermissionService]
@@ -67,8 +65,6 @@ export class Profiles implements OnInit {
     });
 
     permissions = signal<Permission[]>([]);
-
-    errors = signal<Record<string, string>>({});
 
     //Columnas para PrimeNg
     cols: Column[] = [
@@ -132,7 +128,6 @@ export class Profiles implements OnInit {
     //Cerramos dialogo y limpiamos errores
     hideDialog() {
         this.profileDialog = false;
-        this.errors.set({});
     }
 
     //Eliminación de usuario
@@ -149,59 +144,12 @@ export class Profiles implements OnInit {
                 this.profileService.deleteProfile(userId).subscribe({
                     next: (res:string) => {
                         this.loadProfiles();
-                        this.showToast('success',res);
+                        this.showToast({type: 'success',msg: res});
                     },
                     error: (err) => console.error('Error eliminando el perfil:', err)
                 });
             }
         });
-    }
-
-    //Guardar o actualizar según sea el caso
-    saveProfile() {
-        this.errors.set({});
-        this.processing = true;
-        const userId = this.profile().id;
-        //Sino existe un id creamos nuevo usuario
-        if (!userId){
-            const newProfile: Profile = {
-                profile_code: this.profile().profile_code,
-                name: this.profile().name,
-                sections: this.profile().sections
-            };
-            this.profileService.createProfile(newProfile).subscribe({
-                next: (res:string) => {
-                    this.processing = false;
-                    this.loadProfiles();
-                    this.hideDialog();
-                    this.showToast('success',res);
-                },
-                error: (err) => {
-                    this.setErrors(err);
-                    this.processing = false;
-                }
-            });
-        }else{
-            //De otro modo actualizamos el existente
-            const updatedProfile: Profile = {
-                id: this.profile().id,
-                profile_code: this.profile().profile_code,
-                name: this.profile().name,
-                sections: this.profile().sections
-            };
-            this.profileService.updateProfile(userId, updatedProfile).subscribe({
-                next: (res:string) => {
-                    this.processing = false;
-                    this.loadProfiles();
-                    this.hideDialog();
-                    this.showToast('success',res);
-                },
-                error: (err) => {
-                    this.setErrors(err);
-                    this.processing = false;
-                }
-            });
-        }
     }
 
     // Función genérica para descargar archivos Blob
@@ -246,28 +194,11 @@ export class Profiles implements OnInit {
         });
     }
 
-    //Manejo de errores
-    setErrors(err: HttpErrorResponse) {
-        // Capturamos el error 422 de Laravel
-        if (err.status === 422 && err.error?.errors) {
-            const rawErrors = err.error.errors;
-            const formattedErrors: Record<string, string> = {};
-
-            // Extraemos solo el primer mensaje de error de cada campo
-            Object.keys(rawErrors).forEach((key) => {
-                formattedErrors[key] = rawErrors[key][0];
-            });
-
-            // Actualizamos la Signal con los errores procesados
-            this.errors.set(formattedErrors);
-            this.showToast('warn','Por favor revisa el formulario.');
-        }
-    }
     //Agregar un nuevo mensaje a la pantala(toast)
-    showToast(type: string, msg: string){
+    showToast(data: {type: string, msg: string}){
         this.messageService.add({
-            severity: type,
-            summary: msg,
+            severity: data.type,
+            summary: data.msg,
             life: 3000
         });
     }
