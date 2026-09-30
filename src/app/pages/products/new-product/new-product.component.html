@@ -1,0 +1,45 @@
+<p-dialog [(visible)]="productDialog" [style]="{ width: '450px' }" header="Detalles del producto" [modal]="true" (onHide)="hideDialog()">
+    <ng-template #content>
+        <div class="flex flex-col gap-6">
+            @if(product.product_code) {
+            <div>
+                <label for="product_code" class="block font-bold mb-3">Código del producto</label>
+                <input type="text" pInputText id="product_code" [(ngModel)]="product.product_code"
+                    placeholder="Juanito Pérez" [ngClass]="{ 'ng-invalid ng-dirty': errors()['profile_code'] }" required
+                    autofocus fluid />
+                <small class="text-red-500" *ngIf="!product.product_code || errors()['name']">{{
+                    errors()['product_code'] ?
+                    errors()['product_code'] : 'El código es obligatorio.'}}</small>
+            </div>
+            }
+            <div>
+                <label for="name" class="block font-bold mb-3">Nombre</label>
+                <input type="text" pInputText id="name" [(ngModel)]="product.name" placeholder="Camioneta"
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['name'] }" required autofocus fluid />
+                <small class="text-red-500" *ngIf="!product.name || errors()['name']">{{ errors()['name'] ?
+                    errors()['name'] : 'El nombre es obligatorio.'}}</small>
+            </div>
+            <div>
+                <label for="brand" class="block font-bold mb-3">Marca</label>
+                <input type="text" pInputText id="brand" [(ngModel)]="product.brand" placeholder="Toyota"
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['brand'] }" required autofocus fluid />
+                <small class="text-red-500" *ngIf="!product.name || errors()['brand']">{{ errors()['brand'] ?
+                    errors()['brand'] : 'La marca es obligatoria.'}}</small>
+            </div>
+            <div>
+                <label for="price" class="block font-bold mb-3">Precio</label>
+                <p-inputnumber id="price" [(ngModel)]="product.price" [showButtons]="true"
+                    [ngClass]="{ 'ng-invalid ng-dirty': errors()['price'] }" required autofocus fluid [min]="0"
+                    [max]="999" />
+                <small class="text-red-500" *ngIf="!product.price || product.price > 999 || errors()['price']">{{
+                    errors()['price'] ?
+                    errors()['price'] : 'El precio es invalido.'}}</small>
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-template #footer>
+        <p-button label="Cancelar" icon="pi pi-times" text (click)="hideDialog()" [loading]="processing" />
+        <p-button label="Guardar" icon="pi pi-check" (click)="saveProfile()" [loading]="processing" />
+    </ng-template>
+</p-dialog>

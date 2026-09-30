@@ -1,4 +1,4 @@
-<p-dialog [(visible)]="showDialog" [style]="{ width: '450px' }" header="Detalles del perfil" [modal]="true">
+<p-dialog [(visible)]="showDialog" [style]="{ width: '450px' }" header="Detalles del perfil" [modal]="true" (onHide)="hideDialog()">
     <ng-template #content>
         <div class="flex flex-col gap-6">
             @if(profile.profile_code) {

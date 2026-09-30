@@ -1,4 +1,4 @@
-<p-dialog [(visible)]="userDialog" [style]="{ width: '450px' }" header="Detalles del usuario" [modal]="true">
+<p-dialog [(visible)]="userDialog" [style]="{ width: '450px' }" header="Detalles del usuario" [modal]="true" (onHide)="hideDialog()">
     <ng-template #content>
         <div class="flex flex-col gap-6">
             @if (imagePreview()) {

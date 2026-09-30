@@ -9,7 +9,6 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { InputTextModule } from 'primeng/inputtext';
 import { MultiSelectModule } from 'primeng/multiselect';
 import { InputNumberModule } from 'primeng/inputnumber';
-import { DialogModule } from 'primeng/dialog';
 import { TagModule } from 'primeng/tag';
 import { InputIconModule } from 'primeng/inputicon';
 import { IconFieldModule } from 'primeng/iconfield';
@@ -18,6 +17,7 @@ import { ProductService } from './Services/product.service';
 import { AuthService } from '../../core/services/auth.service';
 import { Product } from '../../models/product.model';
 import { HttpErrorResponse } from '@angular/common/http';
+import { NewProductComponent } from './new-product/new-product.component';
 
 interface Column {
     field: string;
@@ -38,11 +38,11 @@ interface Column {
         InputTextModule,
         MultiSelectModule,
         InputNumberModule,
-        DialogModule,
         TagModule,
         InputIconModule,
         IconFieldModule,
-        ConfirmDialogModule
+        ConfirmDialogModule,
+        NewProductComponent
     ],
     templateUrl: 'products.component.html',
     providers: [MessageService, ProductService, ConfirmationService]
@@ -126,6 +126,7 @@ export class Products implements OnInit {
 
     //Cerramos dialogo y limpiamos errores
     hideDialog() {
+        this.loadProducts();
         this.productDialog = false;
         this.errors.set({});
     }
@@ -144,61 +145,12 @@ export class Products implements OnInit {
                 this.productService.deleteProduct(userId).subscribe({
                     next: (res:string) => {
                         this.loadProducts();
-                        this.showToast('success', res);
+                        this.showToast({type:'success', msg: res});
                     },
                     error: (err) => console.error('Error eliminando el producto:', err)
                 });
             }
         });
-    }
-
-    //Guardar o actualizar según sea el caso
-    saveProfile() {
-        this.errors.set({});
-        this.processing = true;
-        const userId = this.product().id;
-        //Sino existe un id creamos nuevo usuario
-        if (!userId){
-            const newProduct: Product = {
-                product_code: this.product().product_code,
-                name: this.product().name,
-                brand: this.product().brand,
-                price: this.product().price,
-            };
-            this.productService.createProduct(newProduct).subscribe({
-                next: (res:string) => {
-                    this.processing = false;
-                    this.loadProducts();
-                    this.hideDialog();
-                    this.showToast('success',res);
-                },
-                error: (err) => {
-                    this.setErrors(err);
-                    this.processing = false;
-                }
-            });
-        }else{
-            //De otro modo actualizamos el existente
-            const updatedProduct: Product = {
-                id: this.product().id,
-                product_code: this.product().product_code,
-                name: this.product().name,
-                brand: this.product().brand,
-                price: this.product().price,
-            };
-            this.productService.updateProduct(userId, updatedProduct).subscribe({
-                next: (res:string) => {
-                    this.processing = false;
-                    this.loadProducts();
-                    this.hideDialog();
-                    this.showToast('success',res);
-                },
-                error: (err) => {
-                    this.setErrors(err);
-                    this.processing = false;
-                }
-            });
-        }
     }
 
     // Función genérica para descargar archivos Blob
@@ -243,28 +195,11 @@ export class Products implements OnInit {
         });
     }
 
-    //Manejo de errores
-    setErrors(err: HttpErrorResponse) {
-        // Capturamos el error 422 de Laravel
-        if (err.status === 422 && err.error?.errors) {
-            const rawErrors = err.error.errors;
-            const formattedErrors: Record<string, string> = {};
-
-            // Extraemos solo el primer mensaje de error de cada campo
-            Object.keys(rawErrors).forEach((key) => {
-                formattedErrors[key] = rawErrors[key][0];
-            });
-
-            // Actualizamos la Signal con los errores procesados
-            this.errors.set(formattedErrors);
-            this.showToast('warn','Por favor revisa el formulario.');
-        }
-    }
     //Agregar un nuevo mensaje a la pantala(toast)
-    showToast(type: string, msg: string){
+    showToast(data: { type: string, msg: string}){
         this.messageService.add({
-            severity: type,
-            summary: msg,
+            severity: data.type,
+            summary: data.msg,
             life: 3000
         });
     }
